@@ -1,6 +1,7 @@
 import re
 import os
 import argparse
+import json
 
 
 def doc_file (filename):
@@ -276,6 +277,33 @@ def create_html_for_variables (variable_doc_list):
     return html_snippet
 
 
+def document_json_file (output_file, json_filename):
+    with open(json_filename) as file_data:
+        json_data = json.load(file_data)
+    documentation_list = [(key, value) for (key, value) in json_data.items() if '__doc' in key]
+    documentation_list = [{'name': key[ : -5], 'type': value['type'], 'description': value['description']} for (key, value) in json_data.items() if '__doc' in key]
+    html = create_html_for_json_file(output_file, documentation_list, json_filename)
+    output_file.write(html)
+
+
+def create_html_for_json_file (output_file, documentation_list, json_filename):
+    html_snippet = '<hr/>\n\n<h2>File: {}</h2>\n\n'.format(json_filename)
+    html_snippet += '<table class="variable-table"><thead><tr><th>Name</th><th>Type</th><th>Decsription</tr></thead>'
+    for documentation_item in documentation_list:
+        html_snippet += '''
+                        <tr>
+                            <td class="param-name-cell">{}</td>
+                            <td class="type-cell">{}</td>
+                            <td class="description-cell">{}</td>
+                        </tr>'''.format(
+                            documentation_item['name'],
+                            documentation_item['type'].replace('<','&lt;').replace('>','&gt;'),
+                            documentation_item['description']
+                        )
+    html_snippet += '</table>'
+    return html_snippet
+
+
 def process_args(args):
     all_files = []
 
@@ -288,7 +316,6 @@ def process_args(args):
         else:
             next_walk = next(os.walk(args.folder))
             all_files = [next_walk[0] + '/' + file for file in next_walk[2]]
-            print(all_files)
         all_files = [file for file in all_files if file.endswith('.js')]
 
 
@@ -307,13 +334,16 @@ parser.add_argument('--folder')
 parser.add_argument('--recursive', type=bool)
 parser.add_argument('--files', nargs='+')
 parser.add_argument('--include-undocumented', type=bool, default=False)
+parser.add_argument('--json-file')
 args = parser.parse_args()
 files = process_args(args)
-print(args)
 
 docs = [{'name': file['name'], 'data': doc_file(file['path'])} for file in files]
 
 doc_file = init_output_file(args.projectname)
+
+if args.json_file:
+    document_json_file(doc_file, args.json_file)
 
 for documentation_dict in docs:
     documentation_to_file(doc_file, documentation_dict, args.include_undocumented)
