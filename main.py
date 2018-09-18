@@ -1,4 +1,6 @@
 import re
+import os
+import argparse
 
 
 def doc_file (filename):
@@ -162,7 +164,7 @@ def extract_function_name (fname_line):
 
 
 def init_output_file (project_name):
-    output_file = open('documentation.html', 'w+')
+    output_file = open(project_name + '.html', 'w+')
     output_file.write('<html><head><style>')
     output_file.write('''
         body {padding: 5px 70px;}
@@ -192,7 +194,10 @@ def init_output_file (project_name):
     return output_file
 
 
-def documentation_to_file (output_file, documentation_dict):
+def documentation_to_file (output_file, documentation_dict, include_empty):
+    if not include_empty and len(documentation_dict['data']['variables']) + len(documentation_dict['data']['functions']) == 0:
+        return 0
+
     output_file.write('<hr/>\n\n<h2>File: {}</h2>\n\n'.format(documentation_dict['name']))
     if len(documentation_dict['data']['variables']) > 0:
         output_file.write('<h3 style="margin-bottom: 5px;">Variables</h3>')
@@ -206,6 +211,7 @@ def documentation_to_file (output_file, documentation_dict):
             html_snippet = create_html_for_function(function_doc)
             output_file.write(html_snippet)
             output_file.write('\n\n')
+    return 1
 
 
 def create_html_for_function (function_doc):
@@ -270,16 +276,47 @@ def create_html_for_variables (variable_doc_list):
     return html_snippet
 
 
-files_to_doc = ['C:/Users/ragna/Desktop/asd.js']
-files_to_doc = ['C:/scripts/Bildeviser/Widget.js']
-project_name = 'Bildeviser'
+def process_args(args):
+    all_files = []
+
+    if args.files:
+        all_files = args.files
+    
+    elif args.folder:
+        if args.recursive:
+            all_files = [next_walk[0] + '/' + file for next_walk in os.walk(args.folder) for file in next_walk[2]]
+        else:
+            next_walk = next(os.walk(args.folder))
+            all_files = [next_walk[0] + '/' + file for file in next_walk[2]]
+            print(all_files)
+        all_files = [file for file in all_files if file.endswith('.js')]
 
 
+    all_js_files = []
+    for file in all_files:
+        if '/' in file:
+            all_js_files.append({'name': file[file.rfind('/')+1 : ], 'path': file})
+        else:
+            all_js_files.append({'name': file, 'path': file})
+    return all_js_files
 
-docs = [{'name': 'Widget.js', 'data': doc_file(files_to_doc[0])}]
 
-doc_file = init_output_file(project_name)
+parser = argparse.ArgumentParser(description='THis is parser!')
+parser.add_argument('--projectname', required=True)
+parser.add_argument('--folder')
+parser.add_argument('--recursive', type=bool)
+parser.add_argument('--files', nargs='+')
+parser.add_argument('--include-undocumented', type=bool, default=False)
+args = parser.parse_args()
+files = process_args(args)
+print(args)
+
+docs = [{'name': file['name'], 'data': doc_file(file['path'])} for file in files]
+
+doc_file = init_output_file(args.projectname)
+
 for documentation_dict in docs:
-    documentation_to_file(doc_file, documentation_dict)
+    documentation_to_file(doc_file, documentation_dict, args.include_undocumented)
+
 doc_file.close()
 
