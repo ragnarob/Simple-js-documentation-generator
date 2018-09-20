@@ -176,7 +176,6 @@ def init_output_file (project_name):
         .heading-param {font-weight: normal;}
         table {border-collapse: collapse;}
         td, th {border: 1px solid #bbb; padding: 5px 15px; font-weight: normal;}
-        th {padding: 10px 15px;}
         th {background-color: #edf2ed;}
         h1 {font-size: 45px; color: black;}
         h2 {font-size: 33px; color: #111;}
@@ -282,7 +281,7 @@ def create_file_documentation_dict_json (json_filename):
         json_data = json.load(file_data)
     documentation_list = [(key, value) for (key, value) in json_data.items() if '__doc' in key]
     documentation_list = [{'name': key[ : -5], 'type': value['type'], 'description': value['description']} for (key, value) in json_data.items() if '__doc' in key]
-		return documentation_list
+    return documentation_list
 
 
 def json_documentation_to_file (output_file, documentation_dict):
@@ -315,10 +314,10 @@ def process_args(args):
         else:
             next_walk = next(os.walk(args.folder))
             all_files = [next_walk[0] + '/' + file for file in next_walk[2]]
-				if args.include_json:
-        		all_files = [file for file in all_files if file.endswith('.js') or file.endswith('.json')]
-				else:
-        		all_files = [file for file in all_files if file.endswith('.js')]
+        if args.include_json:
+            all_files = [file for file in all_files if file.endswith('.js') or file.endswith('.json')]
+        else:
+            all_files = [file for file in all_files if file.endswith('.js')]
 
     all_js_files = []
     for file in all_files:
@@ -338,13 +337,13 @@ parser.add_argument('--include-json')
 args = parser.parse_args()
 files = process_args(args)
 
-docs = [{'name': file['name'], 'data': create_file_documentation_dict(file['path'])} for file in files if file.endswith('.js')]
-json_docs = [{'name': file['name'], 'data': create_file_documentation_dict_json(file['path']) for file in files if file.endswith('.json')]
+docs = [{'name': file['name'], 'data': create_file_documentation_dict(file['path'])} for file in files if file['path'].endswith('.js')]
+json_docs = [{'name': file['name'], 'data': create_file_documentation_dict_json(file['path'])} for file in files if file['path'].endswith('.json')]
 
 doc_file = init_output_file(args.projectname)
 
 for json_documentation_dict in json_docs:
-		json_documentation_to_file(doc_file, json_documentation_dict)
+    json_documentation_to_file(doc_file, json_documentation_dict)
 
 
 for documentation_dict in docs:
