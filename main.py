@@ -177,12 +177,13 @@ def init_output_file (project_name):
         table {border-collapse: collapse;}
         td, th {border: 1px solid #bbb; padding: 5px 15px; font-weight: normal;}
         th {background-color: #edf2ed;}
-        h1 {font-size: 45px; color: black;}
+        h1 {font-size: 45px; color: black; margin-bottom: }
         h2 {font-size: 33px; color: #111;}
         h3 {font-size: 25px;}
         h4 {font-size: 22px; margin-bottom: 4px; margin-top: 45px; font-weight: normal; letter-spacing: 0.5;}
         h5 {margin: 10px 0 3px 0; font-weight: normal; font-size: 17px;}
         p {margin: 10px 0;}
+				hr {margin-top: 25px;}
         .params-table th {background-color: #e8f7e8;}
         .returns-table th {background-color: #f7e8f5;}
         .variable-table th {background-color: #e8f3f7;}
@@ -223,7 +224,7 @@ def create_html_for_function (function_doc):
         html_snippet += '<span class="small_italic">helper</span>'
     html_snippet += '</h4>\n'
 
-    html_snippet += '<p>{}</p>\n'.format('<br/>'.join(function_doc['description']))
+    html_snippet += '<p>{}</p>\n'.format(' '.join(function_doc['description']))
 
     if len(function_doc['parameters']) > 0:
         html_snippet += '<h5 class="parameters-header">Parameters:</h5>'
@@ -269,7 +270,7 @@ def create_html_for_variables (variable_doc_list):
                         </tr>'''.format(
                             variable_doc['name'],
                             variable_doc['type'].replace('<','&lt;').replace('>','&gt;'),
-                            '<br/>'.join(variable_doc['description'])
+                            ' '.join(variable_doc['description'])
                         )
     html_snippet += '</table>'
 
@@ -285,6 +286,8 @@ def create_file_documentation_dict_json (json_filename):
 
 
 def json_documentation_to_file (output_file, documentation_dict):
+    if len(documentation_dict['data']) == 0:
+        return
     html_snippet = '<hr/>\n\n<h2>File: {}</h2>\n\n'.format(documentation_dict['name'])
     html_snippet += '<table class="variable-table"><thead><tr><th>Name</th><th>Type</th><th>Decsription</tr></thead>'
     for documentation_item in documentation_dict['data']:
