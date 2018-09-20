@@ -4,7 +4,7 @@ import argparse
 import json
 
 
-def doc_file (filename):
+def create_file_documentation_dict (filename):
     with open(filename, 'r') as file_data:
         file_lines = [line.strip() for line in file_data.readlines()]
     
@@ -195,8 +195,8 @@ def init_output_file (project_name):
     return output_file
 
 
-def documentation_to_file (output_file, documentation_dict, include_empty):
-    if not include_empty and len(documentation_dict['data']['variables']) + len(documentation_dict['data']['functions']) == 0:
+def js_documentation_to_file (output_file, documentation_dict):
+    if len(documentation_dict['data']['variables']) + len(documentation_dict['data']['functions']) == 0:
         return 0
 
     output_file.write('<hr/>\n\n<h2>File: {}</h2>\n\n'.format(documentation_dict['name']))
@@ -277,19 +277,18 @@ def create_html_for_variables (variable_doc_list):
     return html_snippet
 
 
-def document_json_file (output_file, json_filename):
+def create_file_documentation_dict_json (json_filename):
     with open(json_filename) as file_data:
         json_data = json.load(file_data)
     documentation_list = [(key, value) for (key, value) in json_data.items() if '__doc' in key]
     documentation_list = [{'name': key[ : -5], 'type': value['type'], 'description': value['description']} for (key, value) in json_data.items() if '__doc' in key]
-    html = create_html_for_json_file(output_file, documentation_list, json_filename)
-    output_file.write(html)
+		return documentation_list
 
 
-def create_html_for_json_file (output_file, documentation_list, json_filename):
-    html_snippet = '<hr/>\n\n<h2>File: {}</h2>\n\n'.format(json_filename)
+def json_documentation_to_file (output_file, documentation_dict):
+    html_snippet = '<hr/>\n\n<h2>File: {}</h2>\n\n'.format(documentation_dict['name'])
     html_snippet += '<table class="variable-table"><thead><tr><th>Name</th><th>Type</th><th>Decsription</tr></thead>'
-    for documentation_item in documentation_list:
+    for documentation_item in documentation_dict['data']:
         html_snippet += '''
                         <tr>
                             <td class="param-name-cell">{}</td>
@@ -301,7 +300,7 @@ def create_html_for_json_file (output_file, documentation_list, json_filename):
                             documentation_item['description']
                         )
     html_snippet += '</table>'
-    return html_snippet
+    output_file.write(html_snippet)
 
 
 def process_args(args):
@@ -316,8 +315,10 @@ def process_args(args):
         else:
             next_walk = next(os.walk(args.folder))
             all_files = [next_walk[0] + '/' + file for file in next_walk[2]]
-        all_files = [file for file in all_files if file.endswith('.js')]
-
+				if args.include_json:
+        		all_files = [file for file in all_files if file.endswith('.js') or file.endswith('.json')]
+				else:
+        		all_files = [file for file in all_files if file.endswith('.js')]
 
     all_js_files = []
     for file in all_files:
@@ -333,20 +334,21 @@ parser.add_argument('--projectname', required=True)
 parser.add_argument('--folder')
 parser.add_argument('--recursive', type=bool)
 parser.add_argument('--files', nargs='+')
-parser.add_argument('--include-undocumented', type=bool, default=False)
-parser.add_argument('--json-file')
+parser.add_argument('--include-json')
 args = parser.parse_args()
 files = process_args(args)
 
-docs = [{'name': file['name'], 'data': doc_file(file['path'])} for file in files]
+docs = [{'name': file['name'], 'data': create_file_documentation_dict(file['path'])} for file in files if file.endswith('.js')]
+json_docs = [{'name': file['name'], 'data': create_file_documentation_dict_json(file['path']) for file in files if file.endswith('.json')]
 
 doc_file = init_output_file(args.projectname)
 
-if args.json_file:
-    document_json_file(doc_file, args.json_file)
+for json_documentation_dict in json_docs:
+		json_documentation_to_file(doc_file, json_documentation_dict)
+
 
 for documentation_dict in docs:
-    documentation_to_file(doc_file, documentation_dict, args.include_undocumented)
+    js_documentation_to_file(doc_file, documentation_dict)
 
 doc_file.close()
 
