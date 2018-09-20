@@ -2,6 +2,7 @@ import re
 import os
 import argparse
 import json
+import pdfkit
 
 
 def create_file_documentation_dict (filename):
@@ -187,7 +188,7 @@ def init_output_file (project_name):
         .params-table th {background-color: #e8f7e8;}
         .returns-table th {background-color: #f7e8f5;}
         .variable-table th {background-color: #e8f3f7;}
-        .param-name-cell, .type-cell {font-family: Consolas; font-size: 17px;}
+        .param-name-cell, .type-cell {font-family: monospace; white-space: pre;}
         pre {display: inline;}
     ''')
     output_file.write('</head></style><body>')
@@ -354,3 +355,5 @@ for documentation_dict in docs:
 
 doc_file.close()
 
+html_content = open(args.projectname + '.html', 'r').read()
+pdfkit.from_file(args.projectname + '.html', 'asdasd.pdf')
