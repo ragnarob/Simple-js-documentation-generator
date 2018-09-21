@@ -202,7 +202,7 @@ def js_documentation_to_file (output_file, documentation_dict):
 
     output_file.write('<hr/>\n\n<h2>File: {}</h2>\n\n'.format(documentation_dict['name']))
     if len(documentation_dict['data']['variables']) > 0:
-        output_file.write('<h3 style="margin-bottom: 5px;">Variables</h3>')
+        output_file.write('<h3 style="margin-bottom: 5px;">Global variables</h3>')
         html_snippet = create_html_for_variables(documentation_dict['data']['variables'])
         output_file.write(html_snippet)
         output_file.write('\n\n')
@@ -306,6 +306,15 @@ def json_documentation_to_file (output_file, documentation_dict):
     output_file.write(html_snippet)
 
 
+def add_description_file (output_file, description_filename):
+    with open(description_filename) as desc_file:
+        file_lines = desc_file.readlines()
+        print(file_lines)
+        output_file.write('<p>')
+        output_file.write('</p><p>'.join(file_lines))
+        output_file.write('</p>')
+
+
 def process_args(args):
     all_files = []
 
@@ -334,18 +343,21 @@ def process_args(args):
 
 parser = argparse.ArgumentParser(description='THis is parser!')
 parser.add_argument('--projectname', required=True)
+parser.add_argument('--files', nargs='+')
+parser.add_argument('--description-file')
 parser.add_argument('--folder')
 parser.add_argument('--recursive', type=bool)
-parser.add_argument('--files', nargs='+')
 parser.add_argument('--include-json')
 args = parser.parse_args()
 files = process_args(args)
 
-docs = [{'name': file['name'], 'data': create_file_documentation_dict(file['path'])} for file in files if file['path'].endswith('.js')]
-json_docs = [{'name': file['name'], 'data': create_file_documentation_dict_json(file['path'])} for file in files if file['path'].endswith('.json')]
-
 doc_file = init_output_file(args.projectname)
 
+if args.description_file:
+    add_description_file(doc_file, args.description_file)
+
+docs = [{'name': file['name'], 'data': create_file_documentation_dict(file['path'])} for file in files if file['path'].endswith('.js')]
+json_docs = [{'name': file['name'], 'data': create_file_documentation_dict_json(file['path'])} for file in files if file['path'].endswith('.json')]
 for json_documentation_dict in json_docs:
     json_documentation_to_file(doc_file, json_documentation_dict)
 
@@ -356,4 +368,4 @@ for documentation_dict in docs:
 doc_file.close()
 
 html_content = open(args.projectname + '.html', 'r').read()
-pdfkit.from_file(args.projectname + '.html', 'asdasd.pdf')
+pdfkit.from_file(args.projectname + '.html', args.projectname+'-documentation.pdf', options={'encoding': 'UTF-8'})
